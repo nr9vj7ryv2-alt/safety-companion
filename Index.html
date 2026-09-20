@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Notes</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --ink: #1e2530;
+    --muted: #5b6572;
+    --border: #dde2e8;
+    --accent: #2c5f7c;
+    --accent-dark: #1d4356;
+    --danger: #c0392b;
+    --danger-dark: #922016;
+    --safe: #2f7d4f;
+    --warn-bg: #fff6e0;
+    --warn-border: #e8c46a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d;
+      --card: #1e242b;
+      --ink: #eef1f4;
+      --muted: #a3adba;
+      --border: #333c46;
+      --accent: #5b9bc2;
+      --accent-dark: #3f7fa3;
+      --danger: #e0574a;
+      --danger-dark: #c0392b;
+      --safe: #4caf7d;
+      --warn-bg: #3a331a;
+      --warn-border: #7a6a2e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d;
+    --card: #1e242b;
+    --ink: #eef1f4;
+    --muted: #a3adba;
+    --border: #333c46;
+    --accent: #5b9bc2;
+    --accent-dark: #3f7fa3;
+    --danger: #e0574a;
+    --danger-dark: #c0392b;
+    --safe: #4caf7d;
+    --warn-bg: #3a331a;
+    --warn-border: #7a6a2e;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 16px 16px 80px;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 50;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .topbar h1 {
+    font-size: 1.1rem;
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .exit-btn {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .exit-btn:hover { background: var(--danger-dark); }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    margin-top: 0;
+    font-size: 1.05rem;
+  }
+  .notice {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    font-size: 0.92rem;
+  }
+  .notice strong { display: block; margin-bottom: 6px; }
+  .notice ul { margin: 8px 0 0; padding-left: 20px; }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    margin-top: 12px;
+    font-weight: 600;
+  }
+  input[type="text"], select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 1rem;
+    font-family: inherit;
+  }
+  textarea { min-height: 90px; resize: vertical; }
+
+  button.primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 12px;
+  }
+  button.primary:hover { background: var(--accent-dark); }
+  button.stop {
+    background: var(--danger);
+  }
+  button.stop:hover { background: var(--danger-dark); }
+  button.secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  button.small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status-banner {
+    text-align: center;
+    padding: 22px 16px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 1.15rem;
+    margin-bottom: 16px;
+    border: 2px solid var(--border);
+  }
+  .status-idle { color: var(--muted); }
+  .status-listening { color: var(--accent); border-color: var(--accent); }
+  .status-recording {
+    color: white;
+    background: var(--danger);
+    border-color: var(--danger-dark);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .status-recording { animation: none; }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.75; }
+  }
+
+  .rec-item, .report-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .rec-item:last-child, .report-item:last-child { border-bottom: none; }
+  .rec-meta { font-size: 0.85rem; color: var(--muted); }
+  .rec-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .empty-msg { color: var(--muted); font-size: 0.9rem; font-style: italic; }
+
+  .resource-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+  .resource-line:last-child { border-bottom: none; }
+  .resource-line a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+  .danger-zone {
+    border: 1.5px solid var(--danger);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  audio { width: 100%; margin-top: 8px; }
+
+  .report-view {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+  }
+
+  .emergency-bar {
+    display: none;
+    background: var(--danger);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 16px;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .emergency-bar.show { display: flex; }
+  .emergency-bar a, .emergency-bar button {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: white;
+    color: var(--danger-dark);
+    border: none;
+    border-radius: 10px;
+    padding: 16px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .paywall {
+    max-width: 480px;
+    margin: 60px auto;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .paywall h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  .paywall .price {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 16px 0 4px;
+  }
+  .paywall .price-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .paywall ul { text-align: left; margin: 20px 0; padding-left: 20px; }
+  .paywall ul li { margin-bottom: 8px; }
+  .subscribe-btn {
+    display: block;
+    background: var(--accent);
+    color: white;
+    padding: 16px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    text-decoration: none;
+    margin-top: 10px;
+  }
+  .subscribe-btn:hover { background: var(--accent-dark); }
+  .plan-toggle {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .plan-toggle button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .plan-toggle button.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: white;
+  }
+</style>
+</head>
+<body>
+<div id="paywallScreen" class="paywall">
+  <h1>🛡️ Safety Companion</h1>
+  <p>Hands-free, voice-activated recording and emergency alerts — subscribe to unlock full access.</p>
+
+  <div class="plan-toggle">
+    <button id="monthlyBtn" class="active">Monthly</button>
+    <button id="yearlyBtn">Yearly (save 33%)</button>
+  </div>
+  <div class="price" id="priceDisplay">$4.99<span style="font-size:1rem;">/mo</span></div>
+  <div class="price-sub" id="priceSub">Cancel anytime</div>
+
+  <ul>
+    <li>Two hands-free voice codewords to start recording</li>
+    <li>One-tap 911 and trusted-contact SOS alerts</li>
+    <li>Unlimited local recordings &amp; incident reports</li>
+    <li>Nothing ever leaves your device</li>
+  </ul>
+
+  <a href="#" id="subscribeBtn" class="subscribe-btn" target="_blank" rel="noopener">Subscribe Now →</a>
+  <p style="font-size:0.8rem;color:var(--muted);margin-top:16px;">Already subscribed? <a href="#" id="restoreLink" style="color:var(--accent);">Restore access</a></p>
+</div>
+
+<div class="wrap" id="appContent" style="display:none;">
+
+  <div class="topbar">
+    <h1>My Notes</h1>
+    <button class="exit-btn" id="quickExitBtn" title="Leave this page instantly (Esc key also works)">Quick Exit</button>
+  </div>
+
+  <div class="notice">
+    <strong>⚠️ Please read before relying on this tool</strong>
+    This app has real limits — understanding them could matter for your safety:
+    <ul>
+      <li>It can only listen for your codeword while <strong>this browser tab is open and your screen is on</strong>. It cannot listen with the screen off or the app closed.</li>
+      <li>It <strong>cannot control your phone's built-in camera or voice recorder app</strong> — no app can do that. Instead, it has its own recorder built in below.</li>
+      <li><strong>No app can send a file directly to 911</strong> — that channel doesn't exist for any app. When recording starts, a one-tap "Call 911" button appears instead — it still requires your tap to actually place the call, which is a deliberate safety choice: automatically completing a call from a possible false trigger could cause real problems.</li>
+      <li>An optional trusted contact can get a pre-filled SOS text (with your location, if allowed) ready to send in one tap — this also requires your final tap to send, for the same reason.</li>
+      <li>Your phone/browser will always show a visible microphone or recording indicator whenever recording is active — this can't be hidden, by design, for your protection against secret surveillance too.</li>
+      <li>All recordings, reports, and your trusted contact are stored <strong>only on this device</strong> — nothing is ever uploaded anywhere.</li>
+      <li>This is not a substitute for calling emergency services yourself. If you are in immediate danger, call <strong>911</strong> (or your local emergency number) if it is safe to do so.</li>
+    </ul>
+  </div>
+
+  <div id="emergencyBar" class="emergency-bar">
+    <a href="tel:911">🚨 Call 911 Now</a>
+    <button id="sosContactBtn">📍 Send SOS to Trusted Contact</button>
+  </div>
+
+  <div class="card">
+    <h2>👤 Trusted Contact (optional)</h2>
+    <p class="empty-msg">If set, an SOS text (with your location, if allowed) will be ready to send in one tap whenever recording starts.</p>
+    <label for="contactName">Contact name</label>
+    <input type="text" id="contactName" placeholder="e.g. Sam">
+    <label for="contactPhone">Contact phone number</label>
+    <input type="text" id="contactPhone" placeholder="e.g. 5551234567">
+    <button class="secondary" id="saveContactBtn" style="margin-top:12px;">Save Contact</button>
+  </div>
+
+  <div class="card">
+    <h2>🎙️ Voice-Activated Recording</h2>
+    <div id="statusBanner" class="status-banner status-idle">Not listening</div>
+
+    <label for="codeword">Your codeword or phrase</label>
+    <input type="text" id="codeword" value="code red" placeholder="e.g. code red">
+
+    <label for="codeword2">Second codeword (optional) — either one triggers recording</label>
+    <input type="text" id="codeword2" placeholder="e.g. is dinner ready">
+    <p class="empty-msg">Having two spoken options means you never need to touch the screen, even as a backup — reaching for a button could itself reveal what's happening.</p>
+
+    <label for="maxDuration">Auto-stop recording after</label>
+    <select id="maxDuration">
+      <option value="60">1 minute</option>
+      <option value="300" selected>5 minutes</option>
+      <option value="600">10 minutes</option>
+      <option value="1800">30 minutes</option>
+    </select>
+
+    <button class="primary" id="toggleListenBtn">Start Listening</button>
+    <button class="primary" id="manualRecordBtn" style="background:var(--danger)">🔴 Start Recording Now (no codeword needed)</button>
+    <button class="primary stop" id="stopRecordBtn" disabled>Stop Recording</button>
+
+    <p id="speechSupportMsg" class="empty-msg" style="display:none;">
+      Voice activation isn't supported in this browser. The manual recording button above still works everywhere.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>📼 My Recordings</h2>
+    <div id="recordingsList"><p class="empty-msg">No recordings yet.</p></div>
+  </div>
+
+  <div class="card">
+    <h2>📝 Incident Report</h2>
+    <label for="reportDate">Date &amp; time</label>
+    <input type="text" id="reportDate" placeholder="auto-filled">
+
+    <label for="reportLocation">Location</label>
+    <input type="text" id="reportLocation" placeholder="e.g. home, kitchen">
+
+    <label for="reportDesc">What happened</label>
+    <textarea id="reportDesc" placeholder="Describe what happened, in your own words and your own time."></textarea>
+
+    <label for="reportRecording">Attach a recording (optional)</label>
+    <select id="reportRecording"><option value="">None</option></select>
+
+    <button class="primary" id="saveReportBtn">Save Report</button>
+  </div>
+
+  <div class="card">
+    <h2>📄 Saved Reports</h2>
+    <div id="reportsList"><p class="empty-msg">No reports yet.</p></div>
+  </div>
+
+  <div class="card">
+    <h2>☎️ Get Help</h2>
+    <div class="resource-line"><span>National DV Hotline (call)</span><a href="tel:18007997233">1-800-799-7233</a></div>
+    <div class="resource-line"><span>Text START</span><a href="sms:88788?&body=START">88788</a></div>
+    <div class="resource-line"><span>Live chat</span><a href="https://www.thehotline.org" target="_blank" rel="noopener">thehotline.org</a></div>
+    <div class="resource-line"><span>Immediate danger</span><a href="tel:911">Call 911</a></div>
+  </div>
+
+  <div class="card danger-zone">
+    <h2>🗑️ Clear All Data</h2>
+    <p class="empty-msg">Permanently deletes all recordings and reports from this device. This cannot be undone.</p>
+    <button class="secondary" id="clearAllBtn" style="border-color:var(--danger); color:var(--danger);">Clear Everything</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  // TODO: replace these with your real Stripe Payment Link URLs once your
+  // Stripe account/products are set up. In each Payment Link's settings,
+  // set the "After payment" redirect to this page's URL + "?paid=true"
+  var STRIPE_LINKS = {
+    monthly: 'https://buy.stripe.com/REPLACE_WITH_MONTHLY_LINK',
+    yearly: 'https://buy.stripe.com/REPLACE_WITH_YEARLY_LINK'
+  };
+
+  var paywallScreen = document.getElementById('paywallScreen');
+  var appContent = document.getElementById('appContent');
+  var subscribeBtn = document.getElementById('subscribeBtn');
+  var monthlyBtn = document.getElementById('monthlyBtn');
+  var yearlyBtn = document.getElementById('yearlyBtn');
+  var priceDisplay = document.getElementById('priceDisplay');
+  var priceSub = document.getElementById('priceSub');
+  var restoreLink = document.getElementById('restoreLink');
+
+  function setPlan(plan) {
+    if (plan === 'yearly') {
+      priceDisplay.innerHTML = '$39.99<span style="font-size:1rem;">/yr</span>';
+      priceSub.textContent = 'Save 33% vs. monthly';
+      subscribeBtn.href = STRIPE_LINKS.yearly;
+      yearlyBtn.classList.add('active');
+      monthlyBtn.classList.remove('active');
+    } else {
+      priceDisplay.innerHTML = '$4.99<span style="font-size:1rem;">/mo</span>';
+      priceSub.textContent = 'Cancel anytime';
+      subscribeBtn.href = STRIPE_LINKS.monthly;
+      monthlyBtn.classList.add('active');
+      yearlyBtn.classList.remove('active');
+    }
+  }
+  monthlyBtn.addEventListener('click', function () { setPlan('monthly'); });
+  yearlyBtn.addEventListener('click', function () { setPlan('yearly'); });
+  setPlan('monthly');
+
+  restoreLink.addEventListener('click', function (e) {
+    e.preventDefault();
+    alert('Restore access is manual during early access — email support with the receipt from your Stripe confirmation email and we will unlock your device.');
+  });
+
+  function unlockApp() {
+    try { localStorage.setItem('sc_subscribed', 'true'); } catch (e) {}
+    paywallScreen.style.display = 'none';
+    appContent.style.display = 'block';
+  }
+
+  // Check for a successful return from Stripe Checkout
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('paid') === 'true') {
+    unlockApp();
+    history.replaceState({}, '', window.location.pathname);
+  } else {
+    var alreadySubscribed = false;
+    try { alreadySubscribed = localStorage.getItem('sc_subscribed') === 'true'; } catch (e) {}
+    if (alreadySubscribed) {
+      unlockApp();
+    }
+  }
+})();
+</script>
+
+<script>
+(function () {
+  // ---------- Trusted contact (localStorage - simple key/value, non-sensitive-file) ----------
+  var contactNameInput = document.getElementById('contactName');
+  var contactPhoneInput = document.getElementById('contactPhone');
+  try {
+    contactNameInput.value = localStorage.getItem('sc_contactName') || '';
+    contactPhoneInput.value = localStorage.getItem('sc_contactPhone') || '';
+  } catch (e) {}
+
+  document.getElementById('saveContactBtn').addEventListener('click', function () {
+    try {
+      localStorage.setItem('sc_contactName', contactNameInput.value.trim());
+      localStorage.setItem('sc_contactPhone', contactPhoneInput.value.trim());
+      alert('Contact saved.');
+    } catch (e) {
+      alert('Could not save contact on this device.');
+    }
+  });
+
+  // ---------- Location (captured on demand, never sent anywhere automatically) ----------
+  var lastKnownLocation = null;
+  function captureLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      lastKnownLocation = pos.coords.latitude + ',' + pos.coords.longitude;
+    }, function () {
+      lastKnownLocation = null;
+    }, { timeout: 8000 });
+  }
+
+  // ---------- Emergency bar ----------
+  var emergencyBar = document.getElementById('emergencyBar');
+  var sosContactBtn = document.getElementById('sosContactBtn');
+
+  function showEmergencyBar() {
+    emergencyBar.classList.add('show');
+  }
+  function hideEmergencyBar() {
+    emergencyBar.classList.remove('show');
+  }
+
+  sosContactBtn.addEventListener('click', function () {
+    var phone = (localStorage.getItem('sc_contactPhone') || '').replace(/\D/g, '');
+    var name = localStorage.getItem('sc_contactName') || 'there';
+    if (!phone) {
+      alert('No trusted contact saved yet. Add one in the Trusted Contact section.');
+      return;
+    }
+    var msg = 'This is an SOS from my safety app. I may need help.';
+    if (lastKnownLocation) {
+      msg += ' My approximate location: https://maps.google.com/?q=' + lastKnownLocation;
+    }
+    window.location.href = 'sms:' + phone + '?&body=' + encodeURIComponent(msg);
+  });
+
+  function quickExit() {
+    window.location.replace('https://www.weather.com');
+  }
+  document.getElementById('quickExitBtn').addEventListener('click', quickExit);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') quickExit();
+  });
+
+  // ---------- IndexedDB setup ----------
+  var db;
+  var dbRequest = indexedDB.open('safetyCompanionDB', 1);
+  dbRequest.onupgradeneeded = function (e) {
+    var database = e.target.result;
+    if (!database.objectStoreNames.contains('recordings')) {
+      database.createObjectStore('recordings', { keyPath: 'id', autoIncrement: true });
+    }
+    if (!database.objectStoreNames.contains('reports')) {
+      database.createObjectStore('reports', { keyPath: 'id', autoIncrement: true });
+    }
+  };
+  dbRequest.onsuccess = function (e) {
+    db = e.target.result;
+    refreshRecordings();
+    refreshReports();
+  };
+  dbRequest.onerror = function () {
+    console.error('Could not open local storage.');
+  };
+
+  function withStore(storeName, mode, callback) {
+    if (!db) return;
+    var tx = db.transaction(storeName, mode);
+    var store = tx.objectStore(storeName);
+    callback(store);
+  }
+
+  // ---------- Recording ----------
+  var mediaRecorder, audioChunks = [], recordingStream, autoStopTimer;
+  var isRecording = false;
+  var isListening = false;
+  var recognition;
+
+  var statusBanner = document.getElementById('statusBanner');
+  var toggleListenBtn = document.getElementById('toggleListenBtn');
+  var manualRecordBtn = document.getElementById('manualRecordBtn');
+  var stopRecordBtn = document.getElementById('stopRecordBtn');
+  var codewordInput = document.getElementById('codeword');
+  var codeword2Input = document.getElementById('codeword2');
+  var maxDurationSelect = document.getElementById('maxDuration');
+
+  function setStatus(mode, text) {
+    statusBanner.className = 'status-banner status-' + mode;
+    statusBanner.textContent = text;
+  }
+
+  function startRecording() {
+    if (isRecording) return;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      recordingStream = stream;
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = function (e) { audioChunks.push(e.data); };
+      mediaRecorder.onstop = function () {
+        var blob = new Blob(audioChunks, { type: 'audio/webm' });
+        saveRecording(blob);
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        isRecording = false;
+        stopRecordBtn.disabled = true;
+        clearTimeout(autoStopTimer);
+        setStatus(isListening ? 'listening' : 'idle', isListening ? 'Listening for codeword...' : 'Not listening');
+        hideEmergencyBar();
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      stopRecordBtn.disabled = false;
+      setStatus('recording', '🔴 RECORDING');
+      showEmergencyBar();
+      captureLocation();
+
+      var maxSec = parseInt(maxDurationSelect.value, 10);
+      autoStopTimer = setTimeout(stopRecording, maxSec * 1000);
+    }).catch(function (err) {
+      alert('Could not access the microphone: ' + err.message);
+    });
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+    }
+  }
+
+  manualRecordBtn.addEventListener('click', startRecording);
+  stopRecordBtn.addEventListener('click', stopRecording);
+
+  // ---------- Voice activation ----------
+  var SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognitionAPI) {
+    document.getElementById('speechSupportMsg').style.display = 'block';
+    toggleListenBtn.disabled = true;
+  } else {
+    recognition = new SpeechRecognitionAPI();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = function (event) {
+      var transcript = '';
+      for (var i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      var codeword = codewordInput.value.trim().toLowerCase();
+      var codeword2 = codeword2Input.value.trim().toLowerCase();
+      var lowerTranscript = transcript.toLowerCase();
+      var matched = (codeword && lowerTranscript.indexOf(codeword) !== -1) ||
+                    (codeword2 && lowerTranscript.indexOf(codeword2) !== -1);
+      if (matched && !isRecording) {
+        startRecording();
+      }
+    };
+
+    recognition.onerror = function (e) {
+      console.warn('Speech recognition error:', e.error);
+    };
+
+    recognition.onend = function () {
+      // Browsers auto-stop recognition periodically; restart if still supposed to be listening
+      if (isListening) {
+        try { recognition.start(); } catch (e) {}
+      }
+    };
+
+    toggleListenBtn.addEventListener('click', function () {
+      if (!isListening) {
+        try {
+          recognition.start();
+          isListening = true;
+          toggleListenBtn.textContent = 'Stop Listening';
+          setStatus('listening', 'Listening for codeword...');
+        } catch (e) {
+          alert('Could not start voice listening: ' + e.message);
+        }
+      } else {
+        isListening = false;
+        recognition.stop();
+        toggleListenBtn.textContent = 'Start Listening';
+        setStatus('idle', 'Not listening');
+      }
+    });
+  }
+
+  // ---------- Recordings list ----------
+  function saveRecording(blob) {
+    withStore('recordings', 'readwrite', function (store) {
+      store.add({ timestamp: new Date().toISOString(), blob: blob });
+      refreshRecordings();
+    });
+  }
+
+  function refreshRecordings() {
+    withStore('recordings', 'readonly', function (store) {
+      var req = store.getAll();
+      req.onsuccess = function () {
+        renderRecordings(req.result.reverse());
+      };
+    });
+  }
+
+  function renderRecordings(records) {
+    var list = document.getElementById('recordingsList');
+    var reportSelect = document.getElementById('reportRecording');
+    reportSelect.innerHTML = '<option value="">None</option>';
+
+    if (records.length === 0) {
+      list.innerHTML = '<p class="empty-msg">No recordings yet.</p>';
+      return;
+    }
+
+    list.innerHTML = '';
+    records.forEach(function (rec) {
+      var url = URL.createObjectURL(rec.blob);
+      var div = document.createElement('div');
+      div.className = 'rec-item';
+      var dateStr = new Date(rec.timestamp).toLocaleString();
+      div.innerHTML =
+        '<div><div class="rec-meta">' + dateStr + '</div>' +
+        '<audio controls src="' + url + '"></audio></div>' +
+        '<div class="rec-controls">' +
+        '<button class="secondary small download-btn">Download</button>' +
+        '<button class="secondary small delete-btn" style="border-color:var(--danger);color:var(--danger);">Delete</button>' +
+        '</div>';
+
+      div.querySelector('.download-btn').addEventListener('click', function () {
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'recording-' + rec.id + '.webm';
+        a.click();
+      });
+      div.querySelector('.delete-btn').addEventListener('click', function () {
+        if (confirm('Delete this recording?')) {
+          withStore('recordings', 'readwrite', function (store) {
+            store.delete(rec.id);
+            refreshRecordings();
+          });
+        }
+      });
+      list.appendChild(div);
+
+      var opt = document.createElement('option');
+      opt.value = rec.id;
+      opt.textContent = dateStr;
+      reportSelect.appendChild(opt);
+    });
+  }
+
+  // ---------- Reports ----------
+  document.getElementById('reportDate').value = new Date().toLocaleString();
+
+  document.getElementById('saveReportBtn').addEventListener('click', function () {
+    var report = {
+      timestamp: new Date().toISOString(),
+      dateField: document.getElementById('reportDate').value,
+      location: document.getElementById('reportLocation').value,
+      description: document.getElementById('reportDesc').value,
+      recordingId: document.getElementById('reportRecording').value || null
+    };
+    if (!report.description.trim()) {
+      alert('Please add a description before saving.');
+      return;
+    }
+    withStore('reports', 'readwrite', function (store) {
+      store.add(report);
+      refreshReports();
+    });
+    document.getElementById('reportLocation').value = '';
+    document.getElementById('reportDesc').value = '';
+    document.getElementById('reportDate').value = new Date().toLocaleString();
+  });
+
+  function refreshReports() {
+    withStore('reports', 'readonly', function (store) {
+      var req = store.getAll();
+      req.onsuccess = function () {
+        renderReports(req.result.reverse());
+      };
+    });
+  }
+
+  function renderReports(reports) {
+    var list = document.getElementById('reportsList');
+    if (reports.length === 0) {
+      list.innerHTML = '<p class="empty-msg">No reports yet.</p>';
+      return;
+    }
+    list.innerHTML = '';
+    reports.forEach(function (r) {
+      var div = document.createElement('div');
+      div.className = 'report-item';
+      div.style.flexDirection = 'column';
+      div.style.alignItems = 'stretch';
+
+      var text = 'Date: ' + r.dateField + '\nLocation: ' + (r.location || '(not specified)') +
+        '\n\n' + r.description + (r.recordingId ? '\n\n[Recording attached: #' + r.recordingId + ']' : '');
+
+      div.innerHTML =
+        '<div class="rec-meta">' + r.dateField + '</div>' +
+        '<div class="report-view">' + text.replace(/</g, '&lt;') + '</div>' +
+        '<div class="rec-controls" style="margin-top:8px;">' +
+        '<button class="secondary small export-btn">Export as text file</button>' +
+        '<button class="secondary small delete-report-btn" style="border-color:var(--danger);color:var(--danger);">Delete</button>' +
+        '</div>';
+
+      div.querySelector('.export-btn').addEventListener('click', function () {
+        var blob = new Blob([text], { type: 'text/plain' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'incident-report-' + r.id + '.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+      div.querySelector('.delete-report-btn').addEventListener('click', function () {
+        if (confirm('Delete this report?')) {
+          withStore('reports', 'readwrite', function (store) {
+            store.delete(r.id);
+            refreshReports();
+          });
+        }
+      });
+
+      list.appendChild(div);
+    });
+  }
+
+  // ---------- Clear all data ----------
+  document.getElementById('clearAllBtn').addEventListener('click', function () {
+    if (confirm('This will permanently delete ALL recordings and reports from this device. Continue?')) {
+      withStore('recordings', 'readwrite', function (store) { store.clear(); refreshRecordings(); });
+      withStore('reports', 'readwrite', function (store) { store.clear(); refreshReports(); });
+    }
+  });
+})();
+</script>
+</body>
+</html>
